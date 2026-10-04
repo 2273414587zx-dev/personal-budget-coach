@@ -108,6 +108,16 @@
     <p class="note">Agent 用代码解释器执行可复现计算；回答自动跟随用户语言（中文提问中文答、英文提问英文答）。</p>
   </section>
 
+  <section style="border-color:#0b7a4b;background:linear-gradient(180deg,#ffffff,#f2faf5)">
+    <span class="tag" style="background:var(--green-light);color:var(--green-dark);margin-bottom:10px">第二个 Agent · 账单省钱</span>
+    <h2>Bill Saver 账单省钱助手</h2>
+    <p style="font-size:14px;margin-bottom:12px">上传账单（CSV / PDF / 图片）或一句话说出支出，自动分类分析、找出浪费项、给出按优先级排序的省钱方案（含每月可省金额与新的储蓄率）。中英双语。也是 BSU Economics 课程作业演示。</p>
+    <div class="actions" style="margin-top:4px">
+      <a class="btn btn-white" style="background:var(--green);color:#fff" href="https://copilot.cloud.microsoft/chat/agent/T_c5a603f5-aa56-9dee-d1a2-66e6637297bf.ab8484b2-50d4-4393-a8d0-29b59cbcb82b.gpt.df101b35-270e-4d6b-949d-8b215c3fb59a" target="_blank" rel="noopener">打开 Bill Saver 开始对话</a>
+    </div>
+    <p class="note" style="margin-top:12px"><b>实测（2026-10-04）：</b>中文账单 &ldquo;工资 $3,500 / 房租 $1,200 / 外卖 $400 / 购物 $350 / 订阅 $30 / 电费 $80 / 其他 $200&rdquo; → 分类占比表 + 优先级（购物→外卖→订阅→其他）+ 月省 $300 方案，储蓄率 35%→44%；英文 &ldquo;How can I save $100 more each month?&rdquo; → 英文回答，给出动订阅 / 只改外卖购物两套方案。</p>
+  </section>
+
   <section>
     <h2>主题边界（已设置）</h2>
     <ul style="margin-left:18px;font-size:14px">
@@ -122,8 +132,8 @@
     <h2>访问方式</h2>
     <p style="font-size:14px;margin-bottom:8px">用 BSU 学校账号登录 Microsoft 365 Copilot：</p>
     <div class="code">https://copilot.cloud.microsoft/agents</div>
-    <p class="note">在&ldquo;我的智能体&rdquo;中找到 Personal Budget Coach；当前为&ldquo;专用&rdquo;状态，需要分享时点&ldquo;共享&rdquo;生成链接。</p>
-    <p class="note" style="margin-top:10px">Agent 完整定义存档（GitHub 仓库）：<a href="https://github.com/2273414587zx-dev/personal-budget-coach/blob/main/docs/copilot_agent_definition.md" target="_blank" rel="noopener" style="color:var(--green-dark);font-weight:700">docs/copilot_agent_definition.md</a></p>
+    <p class="note">在&ldquo;我的智能体&rdquo;中找到 <b>Bill Saver 账单省钱助手</b> 或 <b>Personal Budget Coach</b>；当前均为&ldquo;专用&rdquo;状态，需要分享时点&ldquo;共享&rdquo;生成链接。</p>
+    <p class="note" style="margin-top:10px">Agent 完整定义存档（GitHub 仓库）：<a href="https://github.com/2273414587zx-dev/personal-budget-coach/blob/main/docs/copilot_agent_definition.md" target="_blank" rel="noopener" style="color:var(--green-dark);font-weight:700">docs/copilot_agent_definition.md</a> · <a href="https://github.com/2273414587zx-dev/personal-budget-coach/blob/main/docs/bill_saver_agent_definition.md" target="_blank" rel="noopener" style="color:var(--green-dark);font-weight:700">docs/bill_saver_agent_definition.md</a></p>
   </section>
 
   <footer>Personal Budget Coach · Built by Nancy (Zhang, X.) · BSU Economics Class Project · 2026-10-04</footer>

@@ -24,6 +24,17 @@
 
 ---
 
+## 🧾 Bill Saver 账单省钱助手（第二个 Agent）
+
+**账单分析 + 省钱建议**：上传账单（CSV / PDF / 图片）或一句话说支出 → 自动分类、找浪费项、按优先级给省钱方案（含每月可省金额与新储蓄率）。中英双语，带主题边界。
+
+- 📄 **定义存档**：👉 [`docs/bill_saver_agent_definition.md`](docs/bill_saver_agent_definition.md)
+- 🔗 **打开对话**：https://copilot.cloud.microsoft/agents （登录学校账号 → 智能体 → 你的代理 → Bill Saver 账单省钱助手）
+
+**实测**（2026-10-04）：中文账单（工资 $3,500 / 房租 $1,200 / 外卖 $400 / 购物 $350 / 订阅 $30 / 电费 $80 / 其他 $200）→ 分类占比 + 优先级 + 月省 $300 方案，储蓄率 35%→44%；英文 "How can I save $100 more each month?" → 英文回答两套方案。
+
+---
+
 ## 🌐 网页版（规则引擎，同规则）
 
 纯规则计算、无外部 API、中英双语对话：https://2273414587zx-dev.github.io/personal-budget-coach/webapp.html
@@ -35,7 +46,8 @@ personal-budget-coach/
 ├── index.html                    # ⭐ Copilot Agent 展示页（GitHub Pages 根页面，一打开就是）
 ├── webapp.html                   # 网页版（规则引擎，首页含 Copilot 入口）
 ├── docs/
-│   ├── copilot_agent_definition.md    # ⭐ Copilot Agent 完整定义存档
+│   ├── copilot_agent_definition.md    # ⭐ Copilot Agent 完整定义存档（Personal Budget Coach）
+│   ├── bill_saver_agent_definition.md # ⭐ Bill Saver 账单省钱助手定义存档
 │   ├── personal_budget_coach_copilot_agent.md  # 创建过程与测试记录
 │   ├── copilot_studio_agent_config.md # Copilot Studio 版配置（备查）
 │   └── demo_script_oct8.md           # 课堂演示脚本
