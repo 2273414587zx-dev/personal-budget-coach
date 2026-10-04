@@ -8,7 +8,7 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
     background: #f4f6f8;
     color: #1f2329;
     line-height: 1.5;
@@ -21,7 +21,6 @@
                 background: #22c55e; margin-right: 6px; animation: pulse 2s infinite; }
   @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
 
-  /* ---- chat shell ---- */
   .chat-card {
     background: #fff; border-radius: 14px; box-shadow: 0 1px 3px rgba(16,24,40,.08);
     display: flex; flex-direction: column; overflow: hidden;
@@ -59,7 +58,6 @@
   .msg.agent .bubble.card { width: 100%; }
   .who { font-size: 11px; color: #9ca3af; margin: 3px 6px 0; }
 
-  /* ---- structured reply inside a bubble ---- */
   .bubble p { margin: 0 0 8px; }
   .bubble p:last-child { margin-bottom: 0; }
   .bubble ol { margin: 6px 0 0 18px; }
@@ -94,7 +92,6 @@
   .budget-table td:last-child { text-align: right; font-weight: 600; }
   .agent-foot { margin-top: 10px; font-size: 13px; color: #6b7280; font-style: italic; }
 
-  /* ---- composer ---- */
   .composer { display: flex; gap: 8px; padding: 10px 12px; border-top: 1px solid #eef0f3; background: #fff; }
   .composer input {
     flex: 1; padding: 10px 12px; font-size: 14.5px;
@@ -107,7 +104,6 @@
   }
   .composer button:hover { background: #1d4ed8; }
 
-  /* ---- example chips ---- */
   .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
   .chip {
     background: #fff; border: 1px solid #d1d5db; color: #374151;
@@ -129,23 +125,23 @@
 <div class="wrap">
   <header>
     <h1><span class="dot"></span>Personal Budget Coach</h1>
-    <p>Conversational AI agent — ask about your budget in plain English. Rule-based, no external APIs.</p>
+    <p>Conversational AI agent · 中英文都能问 · Rule-based, no external APIs</p>
   </header>
 
   <div class="chat-card">
     <div class="ctxbar" id="ctxbar"></div>
     <div class="chat" id="chat"></div>
     <div class="composer">
-      <input type="text" id="msgInput" placeholder="Type a question, e.g. “I earn $5000 a month and spend $1500 on rent…”" autocomplete="off">
+      <input type="text" id="msgInput" placeholder="用一句话描述你的预算，或直接提问…" autocomplete="off">
       <button onclick="sendMessage()">Send</button>
     </div>
   </div>
 
-  <div class="chips-label">Try asking…</div>
+  <div class="chips-label">试试这样问 / Try asking…</div>
   <div class="chips" id="chips"></div>
 
   <details class="rules">
-    <summary>Health thresholds used by this agent (rules)</summary>
+    <summary>健康阈值规则 / Health thresholds</summary>
     <table class="rules-table" id="rulesTbl"></table>
   </details>
 
@@ -155,7 +151,7 @@
 <script>
 "use strict";
 /* =====================================================================
-   Personal Budget Coach — conversational agent
+   Personal Budget Coach — conversational agent (bilingual EN/ZH)
    Part 1: budget rules (same engine as personal_budget_coach.py)
    ===================================================================== */
 const THRESHOLDS = {
@@ -164,11 +160,20 @@ const THRESHOLDS = {
   "Entertainment": 0.10, "Shopping": 0.10, "Health": 0.10,
   "Education": 0.10, "Other": 0.10
 };
+const CAT_ZH = {
+  "Housing": "住房", "Utilities": "水电杂费", "Food & Groceries": "餐饮食品",
+  "Transportation": "交通", "Insurance": "保险", "Debt Payments": "债务还款",
+  "Entertainment": "娱乐", "Shopping": "购物", "Health": "健康医疗",
+  "Education": "教育", "Other": "其他"
+};
 const SAVINGS_TARGET = 0.10;
 const BRANCH_META = {
-  emergency: { label: "EMERGENCY", text: "Spending exceeds income — act now" },
-  aggressive: { label: "AGGRESSIVE CUTS", text: "Savings rate below 10% — trim to target" },
-  optimize: { label: "OPTIMIZATION TIPS", text: "Savings rate at/above 10% — fine-tune" }
+  emergency: { en: { label: "EMERGENCY", text: "Spending exceeds income — act now" },
+               zh: { label: "紧急", text: "支出超过收入——必须立刻行动" } },
+  aggressive: { en: { label: "AGGRESSIVE CUTS", text: "Savings rate below 10% — trim to target" },
+                zh: { label: "需要削减", text: "储蓄率低于 10%——需要削减支出" } },
+  optimize: { en: { label: "OPTIMIZATION TIPS", text: "Savings rate at/above 10% — fine-tune" },
+              zh: { label: "优化建议", text: "储蓄率在 10% 以上——可以进一步优化" } }
 };
 
 function money(n) { return "$" + Math.round(n).toLocaleString("en-US"); }
@@ -197,75 +202,102 @@ function analyze(income, expenses) {
 }
 
 function buildAdvice(income, total, savings, rate, flags, branch) {
-  const tips = [];
+  const tips = { en: [], zh: [] };
   if (branch === "emergency") {
-    tips.push("You are spending " + money(Math.abs(savings)) + " MORE than you earn each month " +
+    tips.en.push("You are spending " + money(Math.abs(savings)) + " MORE than you earn each month " +
       "(savings rate " + pct(rate) + "). Stop the bleed first.");
+    tips.zh.push("你每月比收入多花了 " + money(Math.abs(savings)) + "（储蓄率 " + pct(rate) + "）。先止血。");
     flags.slice(0, 3).forEach(function (f) {
-      tips.push("Cut " + f.category + " from " + money(f.amount) + " to the healthy " +
+      tips.en.push("Cut " + f.category + " from " + money(f.amount) + " to the healthy " +
         money(f.threshold) + " — frees " + money(f.over_by) + "/month.");
+      tips.zh.push("把「" + CAT_ZH[f.category] + "」从 " + money(f.amount) + " 降到健康线 " +
+        money(f.threshold) + "——每月省出 " + money(f.over_by) + "。");
     });
-    tips.push("Temporarily zero out Entertainment / Shopping / dining out until your savings rate is back above 0%.");
-    tips.push("If Housing exceeds 30% of income, consider negotiating rent, subletting, or moving within 3 months.");
+    tips.en.push("Temporarily zero out Entertainment / Shopping / dining out until your savings rate is back above 0%.");
+    tips.zh.push("在储蓄率回到 0% 以上之前，暂时停掉娱乐、购物和外出吃饭。");
+    tips.en.push("If Housing exceeds 30% of income, consider negotiating rent, subletting, or moving within 3 months.");
+    tips.zh.push("如果住房超过收入的 30%，考虑谈降租金、转租，或 3 个月内搬家。");
   } else if (branch === "aggressive") {
     const need = income * SAVINGS_TARGET - savings;
-    tips.push("Savings rate is " + pct(rate) + " — below the 10% health line. " +
+    tips.en.push("Savings rate is " + pct(rate) + " — below the 10% health line. " +
       "You need to free up about " + money(need) + "/month to reach it.");
+    tips.zh.push("储蓄率 " + pct(rate) + "，低于 10% 的健康线。要达到目标，每月还需省出约 " + money(need) + "。");
     let freed = 0;
     flags.forEach(function (f) {
-      tips.push("Cut " + f.category + " from " + money(f.amount) + " to " + money(f.threshold) +
+      tips.en.push("Cut " + f.category + " from " + money(f.amount) + " to " + money(f.threshold) +
         " — frees " + money(f.over_by) + "/month.");
+      tips.zh.push("把「" + CAT_ZH[f.category] + "」从 " + money(f.amount) + " 降到 " +
+        money(f.threshold) + "——每月省出 " + money(f.over_by) + "。");
       freed += f.over_by;
     });
     if (freed >= need) {
-      tips.push("Cutting the flagged categories to their healthy thresholds gets you to the 10% goal. Automate that transfer on payday.");
+      tips.en.push("Cutting the flagged categories to their healthy thresholds gets you to the 10% goal. Automate that transfer on payday.");
+      tips.zh.push("把超支类别砍到健康线就能达到 10% 目标。发薪日自动转入储蓄。");
     } else {
-      tips.push("Flagged cuts free " + money(freed) + "; you're still " + money(need - freed) +
+      tips.en.push("Flagged cuts free " + money(freed) + "; you're still " + money(need - freed) +
         " short. Also trim dining out and subscriptions, or add a side-income stream of ~" + money(need - freed) + "/month.");
+      tips.zh.push("砍掉超支类别能省 " + money(freed) + "，还差 " + money(need - freed) +
+        "。再减少外食和订阅，或每月增加约 " + money(need - freed) + " 的副业收入。");
     }
   } else {
     if (rate >= 0.20) {
-      tips.push("Outstanding — you're saving " + pct(rate) + " of income. That's well above the 10% health line.");
+      tips.en.push("Outstanding — you're saving " + pct(rate) + " of income. That's well above the 10% health line.");
+      tips.zh.push("非常棒——你存下了收入的 " + pct(rate) + "，远超 10% 的健康线。");
     } else {
-      tips.push("Healthy — you're saving " + pct(rate) + " (≥ 10%). Small refinements can push you further.");
+      tips.en.push("Healthy — you're saving " + pct(rate) + " (≥ 10%). Small refinements can push you further.");
+      tips.zh.push("健康——你存下了收入的 " + pct(rate) + "（≥10%）。小调整可以更进一步。");
     }
     flags.forEach(function (f) {
-      tips.push("One category to trim: " + f.category + " is " + money(f.over_by) + " above its threshold.");
+      tips.en.push("One category to trim: " + f.category + " is " + money(f.over_by) + " above its threshold.");
+      tips.zh.push("有一个类别可以优化：「" + CAT_ZH[f.category] + "」超出健康线 " + money(f.over_by) + "。");
     });
-    tips.push("Automate a savings transfer on payday, and review bills / subscriptions once a year to renegotiate.");
-    tips.push("If Housing is under 30% and debts are managed, consider investing your surplus rather than just saving it.");
+    tips.en.push("Automate a savings transfer on payday, and review bills / subscriptions once a year to renegotiate.");
+    tips.zh.push("发薪日自动储蓄，每年复盘一次账单和订阅，重新谈价格。");
+    tips.en.push("If Housing is under 30% and debts are managed, consider investing your surplus rather than just saving it.");
+    tips.zh.push("如果住房低于 30% 且债务可控，可以把盈余拿去投资，而不是只存着。");
   }
   return tips;
 }
 
 /* =====================================================================
-   Part 2: natural-language understanding (rule-based, no APIs)
+   Part 2: natural-language understanding (EN + ZH, rule-based)
    ===================================================================== */
 const CAT_RULES = [
-  { cat: "Housing",         words: ["housing","rent","mortgage","apartment","home loan"] },
-  { cat: "Utilities",       words: ["utilities","utility bill","electricity","electric","water bill","gas bill","internet","wifi","phone bill","cell phone"] },
-  { cat: "Food & Groceries", words: ["food","groceries","grocery","dining","restaurant","eating out","meals","lunch","coffee shop"] },
-  { cat: "Transportation",  words: ["transportation","transport","car loan","car payment","gas","fuel","transit","uber","commute","parking"] },
-  { cat: "Insurance",       words: ["insurance"] },
-  { cat: "Debt Payments",   words: ["debt","loan","loans","credit card","credit cards","student loan","borrowing","min payment"] },
-  { cat: "Entertainment",   words: ["entertainment","movies","streaming","netflix","fun","hobbies","travel","vacation","concerts"] },
-  { cat: "Shopping",        words: ["shopping","clothes","clothing","amazon","purchases"] },
-  { cat: "Health",          words: ["health","medical","gym","doctor","medication","healthcare","fitness"] },
-  { cat: "Education",       words: ["education","tuition","school","courses","textbooks"] },
-  { cat: "Other",           words: ["other","misc","miscellaneous","everything else"] }
+  { cat: "Housing",         words: ["housing","rent","mortgage","apartment","home loan","房租","住房","房贷","租金","房子"] },
+  { cat: "Utilities",       words: ["utilities","utility bill","electricity","electric","water bill","gas bill","internet","wifi","phone bill","cell phone","水电","电费","水费","燃气","网费","话费","宽带"] },
+  { cat: "Food & Groceries", words: ["food","groceries","grocery","dining","restaurant","eating out","meals","lunch","coffee shop","吃饭","食物","食品","餐饮","外卖","买菜","伙食"] },
+  { cat: "Transportation",  words: ["transportation","transport","car loan","car payment","gas","fuel","transit","uber","commute","parking","交通","打车","油费","车贷","停车","通勤","公交"] },
+  { cat: "Insurance",       words: ["insurance","保险"] },
+  { cat: "Debt Payments",   words: ["debt","loan","loans","credit card","credit cards","student loan","borrowing","min payment","债务","贷款","信用卡","花呗","借呗","学生贷款","还债","还款","欠款"] },
+  { cat: "Entertainment",   words: ["entertainment","movies","streaming","netflix","fun","hobbies","travel","vacation","concerts","娱乐","电影","旅游","游戏","追剧","爱好"] },
+  { cat: "Shopping",        words: ["shopping","clothes","clothing","amazon","purchases","购物","衣服","网购","淘宝","买东西"] },
+  { cat: "Health",          words: ["health","medical","gym","doctor","medication","healthcare","fitness","健康","医疗","看病","健身","医药","药费"] },
+  { cat: "Education",       words: ["education","tuition","school","courses","textbooks","教育","学费","学习","课程","培训"] },
+  { cat: "Other",           words: ["other","misc","miscellaneous","everything else","其他","杂项","杂费"] }
 ];
 const INCOME_WORDS = ["income","salary","earn","earnings","makes","make","take home","take-home","paycheck","wages","wage","bring home"];
 
 function escapeRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+function detectLang(text) { return /[\u4e00-\u9fa5]/.test(text) ? "zh" : "en"; }
 
-/* tokenize all dollar amounts, remember position + value (commas stripped) */
+/* match a keyword (Chinese: plain indexOf; English: word boundary) */
+function matchWord(text, w) {
+  if (/[\u4e00-\u9fa5]/.test(w)) {
+    const i = text.indexOf(w);
+    return i === -1 ? null : { index: i, length: w.length };
+  }
+  const re = new RegExp("\\b" + escapeRe(w) + "\\b", "i");
+  const m = re.exec(text);
+  return m ? { index: m.index, length: m[0].length } : null;
+}
+
 function tokenizeAmounts(text) {
   const tokens = [];
   const re = /\$?\s*(\d[\d,]*(?:\.\d+)?)/g;
   let m;
   while ((m = re.exec(text)) !== null) {
     const after = text.slice(m.index + m[0].length, m.index + m[0].length + 2);
-    if (/^%/.test(after)) continue; // a percentage, not a dollar amount
+    if (/^%/.test(after)) continue;
     const value = parseFloat(m[1].replace(/,/g, ""));
     if (!isFinite(value)) continue;
     tokens.push({ value: value, index: m.index, raw: m[0], used: false });
@@ -296,14 +328,11 @@ function findTokenAt(tokens, pos) {
 }
 function monthlyOf(value, text, tok) {
   const tail = text.slice(tok.index + tok.raw.length, tok.index + tok.raw.length + 24).toLowerCase();
-  if (/\b(week|weekly)\b/.test(tail)) return Math.round(value * 4.33);
+  if (/\b(week|weekly|每周|一周)\b/.test(tail)) return Math.round(value * 4.33);
   return value;
 }
 
 function nextCategoryWord(text, pos) {
-  /* does another category keyword appear right after this position?
-     e.g. in "$1500 on rent, $800 on food", $800 belongs to food — exclude it
-     from being matched to rent */
   const seg = text.slice(pos, pos + 14).toLowerCase();
   for (let i = 0; i < CAT_RULES.length; i++) {
     const words = CAT_RULES[i].words;
@@ -314,35 +343,55 @@ function nextCategoryWord(text, pos) {
   return false;
 }
 
-/* extract expenses: for each category keyword, grab the nearest unused amount
-   (either "$X on <cat>" or "<cat> is $X") */
 function parseExpenses(text, tokens) {
   const out = {};
   CAT_RULES.forEach(function (rule) {
-    rule.words.forEach(function (w) {
-      const re = new RegExp("\\b" + escapeRe(w) + "\\b", "i");
-      const m = re.exec(text);
-      if (!m) return;
-      const wordEnd = m.index + m[0].length;
+    for (let j = 0; j < rule.words.length; j++) {
+      const w = rule.words[j];
+      const m = matchWord(text, w);
+      if (!m) continue;
+      /* "健康吗？" — a Chinese question particle right after the word means
+         it is asking about health, not listing a spending category */
+      const afterWord = text.slice(m.index + m.length, m.index + m.length + 3);
+      if (/^[吗么呢？?!！]+$/.test(afterWord)) continue;
+      const wordEnd = m.index + m.length;
       const before = nearestBefore(tokens, m.index);
       const after = nearestAfter(tokens, wordEnd);
       const afterBlocked = after !== null && nextCategoryWord(text, after.index + after.raw.length);
       const dBefore = before !== null ? m.index - (before.index + before.raw.length) : 1e9;
       const dAfter = after !== null ? after.index - wordEnd : 1e9;
       let tok = null;
-      if (!afterBlocked && dAfter <= 20 && dAfter < dBefore) tok = after;
+      /* a number glued right after the keyword ("房租1500", "rent $1500") belongs to it */
+      if (dAfter <= 1) tok = after;
+      else if (!afterBlocked && dAfter <= 20 && dAfter < dBefore) tok = after;
       else if (dBefore <= 40) tok = before;
       if (tok !== null) {
         tok.used = true;
         out[rule.cat] = tok.value;
+        break; /* first amount found for this category wins (avoid overlapping words) */
       }
-    });
+    }
   });
   return out;
 }
 
-/* extract income: "I earn/make $5000 a month", "salary of 5000", "income is 5000" */
 function parseIncome(text, tokens) {
+  /* Chinese: 收入/月薪/工资/赚/挣 + number nearby */
+  const zhRe = /(收入|月薪|工资|年薪|赚|挣)/;
+  const zhM = zhRe.exec(text);
+  if (zhM) {
+    const seg = text.slice(zhM.index, zhM.index + 30);
+    const numM = /\$?\s*(\d[\d,]*(?:\.\d+)?)/.exec(seg);
+    if (numM) {
+      const digitIdx = text.indexOf(numM[1], zhM.index);
+      const tok = findTokenAt(tokens, digitIdx);
+      if (tok && !tok.used) {
+        tok.used = true;
+        return monthlyOf(tok.value, text, tok);
+      }
+    }
+  }
+  /* English: "I earn/make $5000 a month" */
   const re = new RegExp("\\b(?:" + INCOME_WORDS.map(escapeRe).join("|") + ")\\b[^0-9$]{0,25}?\\$?(\\d[\\d,]*(?:\\.\\d+)?)", "i");
   let m;
   while ((m = re.exec(text)) !== null) {
@@ -354,7 +403,6 @@ function parseIncome(text, tokens) {
     text = text.slice(pos);
     if (text.length < 4) break;
   }
-  /* fallback: "I get paid 5000 / month" or "$5000 per month" with no income word */
   const re2 = /\$?\s*(\d[\d,]*(?:\.\d+)?)\s*(?:per month|a month|monthly|each month|per week|a week|weekly)\b/i;
   const m2 = re2.exec(text);
   if (m2) {
@@ -365,9 +413,22 @@ function parseIncome(text, tokens) {
   return null;
 }
 
-/* classify what the user wants */
 function classify(text) {
   const t = text.toLowerCase().trim();
+  const zh = /[\u4e00-\u9fa5]/.test(t);
+  if (zh) {
+    if (/^(你好|您好|嗨|哈喽|hello|hi)[\s,.!?！。？]*$/.test(t) && t.length < 15) return "greeting";
+    if (/(谢谢|感谢|辛苦)/.test(t)) return "thanks";
+    if (/(重置|清空|重来|重新开始|忘了)/.test(t)) return "reset";
+    if (/(帮助|怎么用|你能做什么|介绍一下|会什么)/.test(t)) return "help";
+    if (/(存钱|储蓄|存了|存多少|能存|存的钱|存得够|存够|够不够)/.test(t)) return "savings";
+    if (/(应该(花|用|留|存)|多少.*(预算|上限|额度|合适)|预算.*多少)/.test(t)) return "allowance";
+    if (/(太多|太贵|超支|超标|是不是|健康吗|行吗|够吗|正常吗|有问题吗|能负担)/.test(t)) return "check";
+    if (/(规则|阈值|比例|怎么算|原理|标准)/.test(t)) return "rule";
+    if (/(分析|看看|检查|评估|报告|总结|如何)/.test(t)) return "status";
+    if (t.length < 4) return "unknown";
+    return "data";
+  }
   if (/^(hi|hello|hey|yo|good (morning|afternoon|evening))[\s,.!?]?/.test(t) && t.length < 30) return "greeting";
   if (/\b(thank|thanks|thx|appreciate)\b/.test(t)) return "thanks";
   if (/\b(reset|clear|start over|restart|forget)\b/.test(t)) return "reset";
@@ -383,23 +444,24 @@ function classify(text) {
 }
 
 /* =====================================================================
-   Part 3: conversation state + reply builder
+   Part 3: conversation state + reply builder (bilingual)
    ===================================================================== */
 const state = { income: null, expenses: {} };
 
-function renderVerdictCard(r) {
-  const meta = BRANCH_META[r.branch];
+function renderVerdictCard(r, zh) {
+  const meta = BRANCH_META[r.branch][zh ? "zh" : "en"];
   let flagsHtml;
   if (r.flags.length === 0) {
-    flagsHtml = '<div class="no-flags">✓ No category exceeds its healthy threshold.</div>';
+    flagsHtml = '<div class="no-flags">' + (zh ? "✓ 所有类别都在健康线内。" : "✓ No category exceeds its healthy threshold.") + "</div>";
   } else {
     flagsHtml = r.flags.map(function (f) {
-      return '<div class="flag-item"><span><strong>' + f.category + '</strong> · ' +
-        money(f.amount) + ' spent, limit ' + money(f.threshold) + '</span>' +
-        '<span class="badge">over by ' + money(f.over_by) + '</span></div>';
+      return '<div class="flag-item"><span><strong>' + (zh ? CAT_ZH[f.category] : f.category) + '</strong> · ' +
+        money(f.amount) + (zh ? "（上限 " : " spent, limit ") + money(f.threshold) +
+        (zh ? "）" : "") + '</span>' +
+        '<span class="badge">' + (zh ? "超支 " : "over by ") + money(f.over_by) + '</span></div>';
     }).join("");
   }
-  const adviceHtml = '<ol class="advice">' + r.advice.map(function (t) {
+  const adviceHtml = '<ol class="advice">' + r.advice[zh ? "zh" : "en"].map(function (t) {
     return "<li>" + t + "</li>";
   }).join("") + "</ol>";
   const rateCls = r.rate < 0 ? "red" : (r.rate >= 0.10 ? "green" : "");
@@ -409,24 +471,25 @@ function renderVerdictCard(r) {
       '<div class="v-text">' + meta.text + '</div>' +
     '</div>' +
     '<div class="stats">' +
-      '<div class="stat"><div class="s-label">Income</div><div class="s-val">' + money(r.income) + '</div></div>' +
-      '<div class="stat"><div class="s-label">Total expenses</div><div class="s-val">' + money(r.total) + '</div></div>' +
-      '<div class="stat"><div class="s-label">Savings</div><div class="s-val ' + rateCls + '">' + money(r.savings) + '</div></div>' +
-      '<div class="stat"><div class="s-label">Savings rate</div><div class="s-val ' + rateCls + '">' + pct(r.rate) + '</div></div>' +
+      '<div class="stat"><div class="s-label">' + (zh ? "收入" : "Income") + '</div><div class="s-val">' + money(r.income) + '</div></div>' +
+      '<div class="stat"><div class="s-label">' + (zh ? "总支出" : "Total expenses") + '</div><div class="s-val">' + money(r.total) + '</div></div>' +
+      '<div class="stat"><div class="s-label">' + (zh ? "结余" : "Savings") + '</div><div class="s-val ' + rateCls + '">' + money(r.savings) + '</div></div>' +
+      '<div class="stat"><div class="s-label">' + (zh ? "储蓄率" : "Savings rate") + '</div><div class="s-val ' + rateCls + '">' + pct(r.rate) + '</div></div>' +
     '</div>' +
-    '<div class="section-title">Flagged categories</div>' + flagsHtml +
-    '<div class="section-title">Coach\u2019s advice</div>' + adviceHtml +
-    '<div class="agent-foot">Want me to drill into any category? Just ask, e.g. “Is $400 on utilities too much?”</div>' +
+    '<div class="section-title">' + (zh ? "超支类别" : "Flagged categories") + '</div>' + flagsHtml +
+    '<div class="section-title">' + (zh ? "教练建议" : "Coach\u2019s advice") + '</div>' + adviceHtml +
+    '<div class="agent-foot">' + (zh ? "想深入看某一类？直接问，比如“水电费花 400 太多吗？”" :
+      "Want me to drill into any category? Just ask, e.g. “Is $400 on utilities too much?”") + '</div>' +
     '</div>';
 }
 
-function healthyBudgetTable(income) {
+function healthyBudgetTable(income, zh) {
   let rows = "";
   Object.keys(THRESHOLDS).forEach(function (cat) {
-    rows += "<tr><td>" + cat + "</td><td>" + pct(THRESHOLDS[cat]) + " → " + money(THRESHOLDS[cat] * income) + "</td></tr>";
+    rows += "<tr><td>" + (zh ? CAT_ZH[cat] : cat) + "</td><td>" + pct(THRESHOLDS[cat]) + " → " + money(THRESHOLDS[cat] * income) + "</td></tr>";
   });
   return '<table class="budget-table">' + rows +
-    '<tr><td><strong>Savings target</strong></td><td><strong>≥ ' + pct(SAVINGS_TARGET) + ' → ' + money(SAVINGS_TARGET * income) + '</strong></td></tr>' +
+    '<tr><td><strong>' + (zh ? "储蓄目标" : "Savings target") + '</strong></td><td><strong>≥ ' + pct(SAVINGS_TARGET) + ' → ' + money(SAVINGS_TARGET * income) + '</strong></td></tr>' +
     "</table>";
 }
 
@@ -445,29 +508,64 @@ function catFromPhrase(text, fallback) {
   return fallback || null;
 }
 
+function findCategory(text) {
+  for (let i = 0; i < CAT_RULES.length; i++) {
+    const r = CAT_RULES[i];
+    for (let j = 0; j < r.words.length; j++) {
+      if (matchWord(text, r.words[j])) return r.cat;
+    }
+  }
+  return null;
+}
+
 /* ---------- reply handlers ---------- */
 
-function replyGreeting() {
+function replyGreeting(zh) {
+  if (zh) {
+    return "<p>你好！我是你的预算教练。</p><p>用一句话告诉我你的收入和支出，我会像教练一样帮你分析——找出超支项、算储蓄率、给出具体的行动数字。</p><p>试试：<i>“我一个月赚 5000 美元，房租 1500，吃饭 800。”</i> 或者直接问我，比如 <i>“吃饭花 800 太多吗？”</i></p>";
+  }
   return "<p>Hi! I\u2019m your budget coach.</p><p>Tell me your income and expenses in a sentence and I\u2019ll analyze your budget like a coach would — flag overspending, check your savings rate, and give you specific numbers to act on.</p><p>Try: <i>“I earn $5000 a month and spend $1500 on rent, $800 on food.”</i> — or ask me anything, like <i>“Is $800 on food too much?”</i></p>";
 }
-function replyThanks() { return "<p>Anytime! Tell me more about your budget whenever you\u2019re ready.</p>"; }
-function replyReset() {
+function replyThanks(zh) {
+  return zh ? "<p>不客气！随时告诉我你的预算情况。</p>" : "<p>Anytime! Tell me more about your budget whenever you\u2019re ready.</p>";
+}
+function replyReset(zh) {
   state.income = null;
   state.expenses = {};
-  return "<p>Reset done — I\u2019ve cleared everything I knew about your budget. Start fresh whenever you like.</p>";
+  return zh ? "<p>已重置——我清空了所有已知的预算信息。随时重新开始。</p>" :
+    "<p>Reset done — I\u2019ve cleared everything I knew about your budget. Start fresh whenever you like.</p>";
 }
-function replyHelp() {
+function replyHelp(zh) {
+  if (zh) {
+    return "<p>我能帮你做这些（纯规则驱动，不调用外部 API）：</p><ol>" +
+      "<li><b>整体分析</b>——一句话说清收入和支出：<i>“我月薪 5000，房租 1500，吃饭 800。”</i></li>" +
+      "<li><b>单项检查</b>——<i>“吃饭花 800 太多吗？”</i>（按你收入的健康比例对比）</li>" +
+      "<li><b>预算建议</b>——<i>“房租应该花多少？”</i></li>" +
+      "<li><b>储蓄检查</b>——<i>“我存的钱够吗？”</i></li>" +
+      "<li><b>规则说明</b>——<i>“住房的阈值是多少？”</i></li></ol>" +
+      "<p>我会记住你说过的话，可以分多条消息补充。说“重置”重新开始。</p>";
+  }
   return "<p>Here\u2019s what I can do (all rule-based, no external APIs):</p><ol>" +
     "<li><b>Full analysis</b> — tell me your income and expenses in one sentence: <i>“I earn $5000 a month and spend $1500 on rent, $800 on food.”</i></li>" +
-    "<li><b>Spot-check a category</b> — <i>“Is $800 on food too much?”</i> (I\u2019ll compare it to the healthy limit for your income).</li>" +
+    "<li><b>Spot-check a category</b> — <i>“Is $800 on food too much?”</i></li>" +
     "<li><b>Ask for a budget</b> — <i>“How much should I spend on rent?”</i></li>" +
     "<li><b>Check savings</b> — <i>“Am I saving enough?”</i></li>" +
-    "<li><b>Ask about the rules</b> — <i>“What\u2019s the threshold for housing?”</i> or <i>“How does this work?”</i></li></ol>" +
+    "<li><b>Ask about the rules</b> — <i>“What\u2019s the threshold for housing?”</i></li></ol>" +
     "<p>I remember what you tell me, so you can build up your budget across several messages. Say “reset” to start over.</p>";
 }
 function replyRule(parsed) {
-  const cat = parsed.category || catFromPhrase(parsed.text, null);
+  const zh = parsed.lang === "zh";
+  const cat = parsed.category || catFromPhrase(parsed.text, null) || findCategory(parsed.text);
   if (cat && THRESHOLDS[cat] !== undefined) {
+    if (zh) {
+      let s = "<p>「" + CAT_ZH[cat] + "」的健康上限是收入的 <b>" + pct(THRESHOLDS[cat]) + "</b>。";
+      if (state.income !== null) {
+        s += "按你 " + money(state.income) + " 的收入算，每月最多 <b>" + money(THRESHOLDS[cat] * state.income) + "</b>。";
+      } else {
+        s += "告诉我你的收入，我就帮你换算成具体金额。";
+      }
+      return s + "</p>";
+    }
     let s = "<p>The healthy limit for <b>" + cat + "</b> is <b>" + pct(THRESHOLDS[cat]) + " of income</b>.";
     if (state.income !== null) {
       s += " With your income of " + money(state.income) + ", that means up to <b>" + money(THRESHOLDS[cat] * state.income) + "/month</b>.";
@@ -476,21 +574,39 @@ function replyRule(parsed) {
     }
     return s + "</p>";
   }
+  if (zh) {
+    return "<p>我的规则很简单，就三条：</p><ol>" +
+      "<li><b>超支标记</b>——每个类别都有健康上限（占收入比例）：住房 30%、债务 20%、餐饮和交通 15%，其余 10%。超过就标记，并给出超了多少。</li>" +
+      "<li><b>储蓄率</b>——（收入 − 总支出）÷ 收入。</li>" +
+      "<li><b>分档</b>——低于 0% → 紧急；0–10% → 需要削减；≥10% → 优化建议。</li></ol>" +
+      "<p>所有阈值都在聊天区下方「健康阈值规则」里。不调用外部 API，同样的输入每次答案一致。</p>";
+  }
   return "<p>I work with three simple rules:</p><ol>" +
     "<li><b>Flag rule</b> — every category has a healthy limit as a % of income (Housing 30%, Debt 20%, Food &amp; Transport 15%, the rest 10%). Anything above its limit gets flagged with the exact over-by amount.</li>" +
     "<li><b>Savings rate</b> — (income − total expenses) ÷ income.</li>" +
     "<li><b>Branch</b> — below 0% → emergency; 0–10% → aggressive cuts; ≥10% → optimization tips.</li></ol>" +
     "<p>All thresholds are listed in the “Health thresholds” section below this chat. No external APIs — same answer every time.</p>";
 }
-function replyStatus() {
+function replyStatus(parsed) {
+  const zh = parsed.lang === "zh";
+  if (parsed.income !== null) state.income = parsed.income;
+  Object.keys(parsed.expenses).forEach(function (cat) { state.expenses[cat] = parsed.expenses[cat]; });
   if (state.income !== null && Object.keys(state.expenses).length > 0) {
-    return renderVerdictCard(analyze(state.income, state.expenses));
+    return renderVerdictCard(analyze(state.income, state.expenses), zh);
   }
-  return "<p>I don\u2019t have enough yet — tell me your income and some expenses, and I\u2019ll run the full analysis.</p>";
+  return zh ? "<p>我掌握的信息还不够——先告诉我你的收入和支出，我再做完整分析。</p>" :
+    "<p>I don\u2019t have enough yet — tell me your income and some expenses, and I\u2019ll run the full analysis.</p>";
 }
 function replyAllowance(parsed) {
-  const cat = parsed.category || catFromPhrase(parsed.text, null);
+  const zh = parsed.lang === "zh";
+  const cat = parsed.category || catFromPhrase(parsed.text, null) || findCategory(parsed.text);
   if (state.income === null) {
+    if (zh) {
+      let s = "<p>要给出具体金额，我需要知道你的月收入。</p>";
+      if (cat) s += "<p>先给你个参考：「" + CAT_ZH[cat] + "」建议不超过收入的 <b>" + pct(THRESHOLDS[cat] || 0.10) + "</b>。</p>";
+      s += "<p>告诉我，比如 <i>“我月薪 5000 美元”</i>，我就能算出你的预算。</p>";
+      return s;
+    }
     let s = "<p>I\u2019d need your monthly income to give you a dollar number.</p>";
     if (cat) s += "<p>Quick rule of thumb: keep <b>" + cat + "</b> at or under <b>" + pct(THRESHOLDS[cat] || 0.10) + " of income</b>.</p>";
     s += "<p>Tell me, e.g. <i>“I earn $5000 a month”</i>, and I\u2019ll compute your budget.</p>";
@@ -498,43 +614,73 @@ function replyAllowance(parsed) {
   }
   if (cat && THRESHOLDS[cat] !== undefined) {
     const limit = THRESHOLDS[cat] * state.income;
-    return "<p>With " + money(state.income) + "/month income, a healthy <b>" + cat + "</b> budget is <b>" +
-      money(limit) + "</b> (" + pct(THRESHOLDS[cat]) + " of income)." +
-      (state.expenses[cat] !== undefined
-        ? " You currently spend " + money(state.expenses[cat]) + " — " +
-          (state.expenses[cat] > limit ? "that\u2019s " + money(state.expenses[cat] - limit) + " over." : "well within the limit.") +
-          (state.expenses[cat] > limit ? " Trim it to " + money(limit) + " and you free " + money(state.expenses[cat] - limit) + "/month." : "")
-        : " Tell me what you actually spend and I\u2019ll check it against this.") + "</p>";
+    if (zh) {
+      let s = "<p>按你每月 " + money(state.income) + " 的收入，「" + CAT_ZH[cat] + "」的健康预算是 <b>" +
+        money(limit) + "</b>（收入的 " + pct(THRESHOLDS[cat]) + "）。";
+      if (state.expenses[cat] !== undefined) {
+        s += "你目前花 " + money(state.expenses[cat]) + " —— " +
+          (state.expenses[cat] > limit ? "超出 " + money(state.expenses[cat] - limit) + "，砍到 " + money(limit) + " 每月能省出 " + money(state.expenses[cat] - limit) + "。"
+             : "在健康线内，没问题。");
+      } else {
+        s += "告诉我你实际花多少，我帮你对比。";
+      }
+      return s + "</p>";
+    }
+    let s = "<p>With " + money(state.income) + "/month income, a healthy <b>" + cat + "</b> budget is <b>" +
+      money(limit) + "</b> (" + pct(THRESHOLDS[cat]) + " of income).";
+    if (state.expenses[cat] !== undefined) {
+      s += " You currently spend " + money(state.expenses[cat]) + " — " +
+        (state.expenses[cat] > limit ? "that\u2019s " + money(state.expenses[cat] - limit) + " over. Trim it to " + money(limit) + " and you free " + money(state.expenses[cat] - limit) + "/month."
+               : "well within the limit.");
+    } else {
+      s += " Tell me what you actually spend and I\u2019ll check it against this.";
+    }
+    return s + "</p>";
+  }
+  if (zh) {
+    return "<p>按 " + money(state.income) + " 的收入，健康月度预算如下：</p>" +
+      healthyBudgetTable(state.income, true) +
+      "<p class='agent-foot'>这些就是我检查你支出时的规则上限。</p>";
   }
   return "<p>Here\u2019s a healthy monthly budget for " + money(state.income) + " income:</p>" +
-    healthyBudgetTable(state.income) +
+    healthyBudgetTable(state.income, false) +
     "<p class='agent-foot'>These are the rule-based limits I check your spending against.</p>";
 }
 function replyCheck(parsed) {
+  const zh = parsed.lang === "zh";
   const expCount = Object.keys(parsed.expenses).length;
   if (parsed.income !== null) state.income = parsed.income;
   Object.keys(parsed.expenses).forEach(function (cat) { state.expenses[cat] = parsed.expenses[cat]; });
 
-  /* full sentence with real data (income or 2+ categories) -> full analysis */
   if (parsed.income !== null || expCount >= 2) {
     if (state.income !== null && Object.keys(state.expenses).length > 0) {
-      return renderVerdictCard(analyze(state.income, state.expenses));
+      return renderVerdictCard(analyze(state.income, state.expenses), zh);
     }
   }
 
-  /* single-category question: "Is $800 on food too much?" */
   if (expCount === 1) {
     const cat = Object.keys(parsed.expenses)[0];
     const amount = parsed.expenses[cat];
     if (state.income === null) {
-      let s = "<p>I\u2019d need your monthly income to judge that.</p>";
-      s += "<p>For reference, " + cat + " should stay at or under " + pct(THRESHOLDS[cat] || 0.10) + " of income.</p>";
-      s += "<p>Tell me e.g. <i>“I earn $5000 a month and spend " + money(amount) + " on " + cat.toLowerCase() + ".”</i> and I\u2019ll compare right away.</p>";
-      return s;
+      if (zh) {
+        return "<p>要判断这个，我需要你的月收入。</p>" +
+          "<p>参考：「" + CAT_ZH[cat] + "」建议不超过收入的 " + pct(THRESHOLDS[cat] || 0.10) + "。</p>" +
+          "<p>告诉我，比如 <i>“我月薪 5000 美元，" + CAT_ZH[cat] + "花 " + money(amount) + "”</i>，我立刻帮你对比。</p>";
+      }
+      return "<p>I\u2019d need your monthly income to judge that.</p>" +
+        "<p>For reference, " + cat + " should stay at or under " + pct(THRESHOLDS[cat] || 0.10) + " of income.</p>" +
+        "<p>Tell me e.g. <i>“I earn $5000 a month and spend " + money(amount) + " on " + cat.toLowerCase() + ".”</i> and I\u2019ll compare right away.</p>";
     }
     const limit = (THRESHOLDS[cat] || 0.10) * state.income;
     const diff = amount - limit;
     const over = diff > 0;
+    if (zh) {
+      return "<p>按你每月 " + money(state.income) + " 的收入，「" + CAT_ZH[cat] + "」的健康上限是 <b>" + money(limit) +
+        "</b>（收入的 " + pct(THRESHOLDS[cat] || 0.10) + "）。</p>" +
+        "<p>你花了 <b>" + money(amount) + "</b> —— " +
+        (over ? "超出上限 <b>" + money(diff) + "</b>。砍到 " + money(limit) + "，每月能省出 " + money(diff) + "。"
+               : "在上限之内，低于上限 <b>" + money(-diff) + "</b>，没问题。") + "</p>";
+    }
     return "<p>With " + money(state.income) + "/month income, the healthy limit for <b>" + cat +
       "</b> is <b>" + money(limit) + "</b> (" + pct(THRESHOLDS[cat] || 0.10) + " of income).</p>" +
       "<p>You\u2019re spending <b>" + money(amount) + "</b> — that\u2019s " +
@@ -542,34 +688,47 @@ function replyCheck(parsed) {
              : "<b>" + money(-diff) + " under</b> the limit — no problem.") + "</p>";
   }
 
-  /* general overspending question with remembered budget */
   if (state.income !== null && Object.keys(state.expenses).length > 0) {
-    return renderVerdictCard(analyze(state.income, state.expenses));
+    return renderVerdictCard(analyze(state.income, state.expenses), zh);
   }
-  return "<p>Tell me what you\u2019re spending — e.g. <i>“I spend $1500 on housing, $800 on food.”</i> — and I\u2019ll check every category against its limit.</p>";
+  return zh ? "<p>告诉我你的支出，比如 <i>“我房租 1500，吃饭 800”</i>，我会逐项检查是否超限。</p>" :
+    "<p>Tell me what you\u2019re spending — e.g. <i>“I spend $1500 on housing, $800 on food.”</i> — and I\u2019ll check every category against its limit.</p>";
 }
 function replySavings(parsed) {
+  const zh = parsed.lang === "zh";
   if (state.income === null) {
-    return "<p>To check savings I need your income and expenses. Tell me e.g. <i>“I earn $5000 a month and spend $4000 total.”</i></p>";
+    return zh ? "<p>要检查储蓄，我需要你的收入和支出。告诉我，比如 <i>“我月薪 5000，每月总支出 4000”</i>。</p>" :
+      "<p>To check savings I need your income and expenses. Tell me e.g. <i>“I earn $5000 a month and spend $4000 total.”</i></p>";
   }
   if (Object.keys(state.expenses).length === 0) {
-    return "<p>I know your income is " + money(state.income) + " — now tell me your monthly expenses and I\u2019ll compute your savings rate vs. the 10% target.</p>";
+    return zh ? "<p>我知道你的收入是 " + money(state.income) + "——再告诉我每月支出，我就能算出你的储蓄率并对比 10% 目标。</p>" :
+      "<p>I know your income is " + money(state.income) + " — now tell me your monthly expenses and I\u2019ll compute your savings rate vs. the 10% target.</p>";
   }
   const r = analyze(state.income, state.expenses);
   const need = state.income * SAVINGS_TARGET - r.savings;
   if (r.rate < 0) {
-    return "<p>Right now you\u2019re spending <b>" + money(-r.savings) + " more than you earn</b> (savings rate " + pct(r.rate) + "). No savings — you\u2019re in emergency territory. Cut spending until the rate is back above 0%.</p>";
+    return zh
+      ? "<p>目前你每月<b>超支 " + money(-r.savings) + "</b>（储蓄率 " + pct(r.rate) + "），完全没有结余——已经进入紧急状态，先削减开支把储蓄率拉回 0% 以上。</p>"
+      : "<p>Right now you\u2019re spending <b>" + money(-r.savings) + " more than you earn</b> (savings rate " + pct(r.rate) + "). No savings — you\u2019re in emergency territory. Cut spending until the rate is back above 0%.</p>";
   }
   if (r.rate < SAVINGS_TARGET) {
-    return "<p>Your savings rate is <b>" + pct(r.rate) + "</b> — below the 10% health line. You\u2019re saving " + money(r.savings) +
-      "/month; to hit 10% you need to free up about <b>" + money(need) + "/month</b>.</p>" +
-      "<p>Details and the exact cuts are in my full analysis — just ask “review my budget”.</p>";
+    return zh
+      ? "<p>你的储蓄率是 <b>" + pct(r.rate) + "</b>，低于 10% 的健康线。目前每月存 " + money(r.savings) +
+        "；要达到 10%，每月还需省出约 <b>" + money(need) + "</b>。</p>" +
+        "<p>具体砍哪些、砍多少，说“分析我的预算”我给你完整方案。</p>"
+      : "<p>Your savings rate is <b>" + pct(r.rate) + "</b> — below the 10% health line. You\u2019re saving " + money(r.savings) +
+        "/month; to hit 10% you need to free up about <b>" + money(need) + "/month</b>.</p>" +
+        "<p>Details and the exact cuts are in my full analysis — just ask “review my budget”.</p>";
   }
-  return "<p>Yes — you\u2019re saving <b>" + pct(r.rate) + "</b> of income (" + money(r.savings) + "/month), above the 10% health line.</p>" +
-    "<p>Nice work. Next step: automate that transfer on payday and consider investing the surplus.</p>";
+  return zh
+    ? "<p>够！你存下了收入的 <b>" + pct(r.rate) + "</b>（每月 " + money(r.savings) + "），高于 10% 的健康线。</p>" +
+      "<p>很好。下一步：发薪日自动转入储蓄，盈余可以考虑投资。</p>"
+    : "<p>Yes — you\u2019re saving <b>" + pct(r.rate) + "</b> of income (" + money(r.savings) + "/month), above the 10% health line.</p>" +
+      "<p>Nice work. Next step: automate that transfer on payday and consider investing the surplus.</p>";
 }
 
 function replyData(parsed) {
+  const zh = parsed.lang === "zh";
   if (parsed.income !== null) state.income = parsed.income;
   Object.keys(parsed.expenses).forEach(function (cat) {
     state.expenses[cat] = parsed.expenses[cat];
@@ -578,24 +737,30 @@ function replyData(parsed) {
   if (state.income !== null && Object.keys(state.expenses).length > 0) {
     const usedCats = Object.keys(state.expenses).length;
     const lead = usedCats < 4
-      ? "<p>I only counted the " + usedCats + " categories you mentioned — tell me the rest (or say “review my budget” after adding them) for a fuller picture.</p>"
-      : "<p>Got it — here\u2019s your full check-up:</p>";
-    return lead + renderVerdictCard(analyze(state.income, state.expenses));
+      ? (zh ? "<p>我只统计了你提到的 " + usedCats + " 个类别——把其余支出也告诉我（或补完说“分析我的预算”），结果会更完整。</p>"
+           : "<p>I only counted the " + usedCats + " categories you mentioned — tell me the rest (or say “review my budget” after adding them) for a fuller picture.</p>")
+      : (zh ? "<p>收到，这是你的完整体检报告：</p>" : "<p>Got it — here\u2019s your full check-up:</p>");
+    return lead + renderVerdictCard(analyze(state.income, state.expenses), zh);
   }
   if (state.income !== null) {
-    return "<p>Got it — income <b>" + money(state.income) + "/month</b>.</p>" +
-      "<p>Here\u2019s what a healthy monthly budget looks like at that income:</p>" +
-      healthyBudgetTable(state.income) +
-      "<p class='agent-foot'>Now tell me what you actually spend, e.g. <i>“I spend $1500 on housing, $800 on food.”</i> — I\u2019ll check you against these limits.</p>";
+    return (zh ? "<p>收到——月收入 <b>" + money(state.income) + "</b>。</p>" +
+      "<p>按这个收入，健康的月度预算分配如下：</p>" : "<p>Got it — income <b>" + money(state.income) + "/month</b>.</p>" +
+      "<p>Here\u2019s what a healthy monthly budget looks like at that income:</p>") +
+      healthyBudgetTable(state.income, zh) +
+      (zh ? "<p class='agent-foot'>再告诉我实际支出，比如 <i>“我房租 1500，吃饭 800”</i>——我按这些上限给你检查。</p>"
+          : "<p class='agent-foot'>Now tell me what you actually spend, e.g. <i>“I spend $1500 on housing, $800 on food.”</i> — I\u2019ll check you against these limits.</p>");
   }
-  if (gotExp) {
+  if (Object.keys(parsed.expenses).length > 0) {
     const list = Object.keys(parsed.expenses).map(function (c) {
-      return c + " " + money(parsed.expenses[c]);
-    }).join(", ");
-    return "<p>Noted — you spend " + list + ".</p>" +
-      "<p>To judge that fairly I need your monthly income too. Tell me e.g. <i>“I earn $5000 a month.”</i></p>";
+      return (zh ? CAT_ZH[c] : c) + " " + money(parsed.expenses[c]);
+    }).join(zh ? "、" : ", ");
+    return (zh ? "<p>记下了——你的支出：<b>" + list + "</b>。</p>" +
+      "<p>要判断是否合理，我还需要你的月收入。告诉我，比如 <i>“我月薪 5000 美元”</i>。</p>"
+           : "<p>Noted — you spend " + list + ".</p>" +
+      "<p>To judge that fairly I need your monthly income too. Tell me e.g. <i>“I earn $5000 a month.”</i></p>");
   }
-  return "<p>I couldn\u2019t find income or expense numbers in that. Try something like <i>“I earn $5000 a month and spend $1500 on rent, $800 on food.”</i> — or ask <i>“How much should I spend on rent?”</i></p>";
+  return zh ? "<p>我没有从这句话里找到收入或支出的数字。试试这样：<i>“我月薪 5000，房租 1500，吃饭 800”</i>，或者问 <i>“房租应该花多少？”</i></p>" :
+    "<p>I couldn\u2019t find income or expense numbers in that. Try something like <i>“I earn $5000 a month and spend $1500 on rent, $800 on food.”</i> — or ask <i>“How much should I spend on rent?”</i></p>";
 }
 
 /* ---------- entry point ---------- */
@@ -604,32 +769,14 @@ function parseMessage(text) {
   const tokens = tokenizeAmounts(text);
   const parsed = {
     text: text,
+    lang: detectLang(text),
     intent: classify(text),
     income: null,
     expenses: {},
     category: null,
     amount: null
   };
-  /* category + amount for check/allowance questions ("is $800 on food too much?") */
-  const reCat = new RegExp("\\b(" + CAT_RULES.map(function (r) { return r.words.map(escapeRe).join("|"); }).join("|") + ")\\b", "i");
-  const mCat = reCat.exec(text);
-  if (mCat) {
-    for (let i = 0; i < CAT_RULES.length; i++) {
-      const r = CAT_RULES[i];
-      for (let j = 0; j < r.words.length; j++) {
-        if (mCat[1].toLowerCase() === r.words[j]) parsed.category = r.cat;
-      }
-    }
-    const amtRe = /\$?\s*(\d[\d,]*(?:\.\d+)?)/;
-    const seg = text.slice(Math.max(0, mCat.index - 45), mCat.index + mCat[0].length + 20);
-    const mA = amtRe.exec(seg);
-    if (mA) {
-      const tok = findTokenAt(tokens, mCat.index);
-      if (tok) parsed.amount = tok.value;
-      else parsed.amount = parseFloat(mA[1].replace(/,/g, ""));
-    }
-  }
-  if (parsed.intent === "data" || parsed.intent === "check") {
+  if (parsed.intent === "data" || parsed.intent === "check" || parsed.intent === "status") {
     parsed.expenses = parseExpenses(text, tokens);
     parsed.income = parseIncome(text, tokens);
   }
@@ -639,16 +786,18 @@ function parseMessage(text) {
 function handleMessage(text) {
   const parsed = parseMessage(text);
   switch (parsed.intent) {
-    case "greeting": return replyGreeting();
-    case "thanks":   return replyThanks();
-    case "reset":    return replyReset();
-    case "help":     return replyHelp();
+    case "greeting": return replyGreeting(parsed.lang === "zh");
+    case "thanks":   return replyThanks(parsed.lang === "zh");
+    case "reset":    return replyReset(parsed.lang === "zh");
+    case "help":     return replyHelp(parsed.lang === "zh");
     case "rule":     return replyRule(parsed);
-    case "status":   return replyStatus();
+    case "status":   return replyStatus(parsed);
     case "allowance":return replyAllowance(parsed);
     case "check":    return replyCheck(parsed);
     case "savings":  return replySavings(parsed);
-    case "unknown":  return "<p>Hmm, that was too short for me to work with. Try a full sentence like <i>“I earn $5000 a month and spend $1500 on rent.”</i></p>";
+    case "unknown":  return parsed.lang === "zh"
+      ? "<p>这句话太短了，我没法处理。试试完整的句子：<i>“我月薪 5000，房租 1500”</i>。</p>"
+      : "<p>Hmm, that was too short for me to work with. Try a full sentence like <i>“I earn $5000 a month and spend $1500 on rent.”</i></p>";
     default:         return replyData(parsed);
   }
 }
@@ -660,7 +809,7 @@ function addMsg(kind, html) {
   const chat = el("chat");
   const div = document.createElement("div");
   div.className = "msg " + kind;
-  div.innerHTML = html + '<div class="who">' + (kind === "user" ? "You" : "Coach") + "</div>";
+  div.innerHTML = html + '<div class="who">' + (kind === "user" ? "You / 你" : "Coach") + "</div>";
   chat.appendChild(div);
   chat.scrollTop = chat.scrollHeight;
 }
@@ -668,16 +817,16 @@ function addMsg(kind, html) {
 function updateCtxBar() {
   let html = "";
   if (state.income !== null) {
-    html += '<span>Income: <b>' + money(state.income) + '/mo</b></span>';
+    html += '<span>Income/收入: <b>' + money(state.income) + '/mo</b></span>';
   } else {
-    html += "<span>Income: <i>unknown</i></span>";
+    html += "<span>Income/收入: <i>unknown</i></span>";
   }
   const n = Object.keys(state.expenses).length;
-  html += '<span>Expense categories known: <span class="chip-ctx">' + n + "</span></span>";
+  html += '<span>支出类别 / categories: <span class="chip-ctx">' + n + "</span></span>";
   if (n > 0) {
-    html += "<span>" + Object.keys(state.expenses).map(function (c) { return c; }).join(" · ") + "</span>";
+    html += "<span>" + Object.keys(state.expenses).map(function (c) { return CAT_ZH[c] || c; }).join(" · ") + "</span>";
   }
-  html += '<span style="margin-left:auto;color:#9ca3af">Say “reset” to start over</span>';
+  html += '<span style="margin-left:auto;color:#9ca3af">重置 / reset</span>';
   el("ctxbar").innerHTML = html;
 }
 
@@ -698,20 +847,20 @@ function escapeHtml(s) {
 
 /* example chips — click to send */
 const EXAMPLE_PROMPTS = [
-  "I earn $4000 a month and spend $1500 on housing, $800 on food, $600 on debt. Am I okay?",
-  "I make $5000 a month; rent is $1800, food is $800. What do you think?",
+  "我一个月赚4000美元，房租1500，吃饭800，还债600，健康吗？",
+  "我月薪5000，房租1800，吃饭800，怎么样？",
   "My income is $6000: housing $1500, food $750, transport $350, debt $400. Am I saving enough?",
-  "How much should I spend on rent?",
-  "Is $800 on food too much?",
+  "房租应该花多少？",
+  "吃饭花800太多吗？",
   "Am I saving enough?",
-  "What's the threshold for housing?",
+  "住房的阈值是多少？",
   "How does this agent work?"
 ];
 const chipsBox = el("chips");
 EXAMPLE_PROMPTS.forEach(function (p) {
   const b = document.createElement("button");
   b.className = "chip";
-  b.textContent = p.length > 46 ? p.slice(0, 46) + "…" : p;
+  b.textContent = p.length > 44 ? p.slice(0, 44) + "…" : p;
   b.title = p;
   b.onclick = function () {
     el("msgInput").value = p;
@@ -720,19 +869,17 @@ EXAMPLE_PROMPTS.forEach(function (p) {
   chipsBox.appendChild(b);
 });
 
-/* rules table */
+/* rules table (bilingual) */
 el("rulesTbl").innerHTML = Object.keys(THRESHOLDS).map(function (k) {
-  return "<tr><td>" + k + "</td><td>" + Math.round(THRESHOLDS[k] * 100) + "% of income</td></tr>";
-}).join("") + "<tr><td>Savings target</td><td>≥ 10% of income</td></tr>" +
-  "<tr><td colspan=2 style='color:#6b7280;font-weight:400'>Custom categories use the 10% default limit.</td></tr>";
+  return "<tr><td>" + CAT_ZH[k] + " / " + k + "</td><td>" + Math.round(THRESHOLDS[k] * 100) + "% of income</td></tr>";
+}).join("") + "<tr><td>储蓄目标 / Savings target</td><td>≥ 10% of income</td></tr>" +
+  "<tr><td colspan=2 style='color:#6b7280;font-weight:400'>自定义类别按 10% 默认上限 / Custom categories use the 10% default limit.</td></tr>";
 
-/* Enter to send */
 el("msgInput").addEventListener("keydown", function (e) {
   if (e.key === "Enter") { e.preventDefault(); sendMessage(); }
 });
 
-/* welcome message */
-addMsg("agent", replyGreeting());
+addMsg("agent", replyGreeting(true));
 updateCtxBar();
 </script>
 </body>
