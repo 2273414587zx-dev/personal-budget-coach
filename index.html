@@ -21,6 +21,21 @@
                 background: #22c55e; margin-right: 6px; animation: pulse 2s infinite; }
   @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
 
+  .copilot-banner {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    background: linear-gradient(135deg,#065233,#0b7a4b 60%,#14945e); color: #fff;
+    border-radius: 12px; padding: 12px 18px; margin-bottom: 16px;
+    text-decoration: none; box-shadow: 0 2px 6px rgba(6,82,51,.2);
+  }
+  .copilot-banner .t { font-weight: 800; font-size: 15px; }
+  .copilot-banner .s { font-size: 12.5px; opacity: .9; margin-top: 2px; }
+  .copilot-banner .go {
+    background: #fff; color: #065233; border-radius: 999px; padding: 7px 16px;
+    font-size: 13px; font-weight: 700; white-space: nowrap;
+  }
+  .copilot-banner:hover { box-shadow: 0 4px 10px rgba(6,82,51,.3); }
+  @media (max-width: 640px) { .copilot-banner { flex-direction: column; text-align: center; } }
+
   .chat-card {
     background: #fff; border-radius: 14px; box-shadow: 0 1px 3px rgba(16,24,40,.08);
     display: flex; flex-direction: column; overflow: hidden;
@@ -127,6 +142,14 @@
     <h1><span class="dot"></span>Personal Budget Coach</h1>
     <p>Conversational AI agent · 中英文都能问 · Rule-based, no external APIs</p>
   </header>
+
+  <a class="copilot-banner" href="./copilot-agent/" target="_blank" rel="noopener">
+    <div>
+      <div class="t">Personal Budget Coach · Microsoft 365 Copilot Agent 版</div>
+      <div class="s">基于 LLM + 代码执行的智能体：任意自然语言提问、自动跟随中英文、带主题边界。点此查看展示与实测结果 →</div>
+    </div>
+    <span class="go">查看 Copilot Agent 版 →</span>
+  </a>
 
   <div class="chat-card">
     <div class="ctxbar" id="ctxbar"></div>
