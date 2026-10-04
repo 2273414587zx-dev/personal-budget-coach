@@ -95,7 +95,7 @@ Agent 以"编码和执行"（代码解释器）方式运行该技能，输出可
 
 ## 9. 相关产物
 
-- 展示页（GitHub Pages）：https://2273414587zx-dev.github.io/personal-budget-coach/copilot-agent/
+- 展示页（GitHub Pages）：https://2273414587zx-dev.github.io/personal-budget-coach/
 - 网页版（规则引擎，同规则）：https://2273414587zx-dev.github.io/personal-budget-coach/
 - Copilot Studio 版配置（被 M365 Copilot 版取代，备查）：`copilot_studio_agent_config.md`
 - 演示脚本：`demo_script_oct8.md`

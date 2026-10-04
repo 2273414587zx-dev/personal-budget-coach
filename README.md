@@ -10,7 +10,7 @@
 一句话说出收入与支出 → 自动分析储蓄率、超支项、削减建议；带**主题边界**（与预算无关的问题一律拒绝）。
 
 - 📄 **Agent 完整定义存档**：👉 [`docs/copilot_agent_definition.md`](docs/copilot_agent_definition.md)
-- 🖥️ **展示页（GitHub Pages）**：👉 https://2273414587zx-dev.github.io/personal-budget-coach/copilot-agent/
+- 🖥️ **展示页（GitHub Pages，打开即是）**：👉 https://2273414587zx-dev.github.io/personal-budget-coach/
 - 🔗 **打开 Agent 开始对话**：https://copilot.cloud.microsoft/agents （登录学校账号 → 我的智能体 → Personal Budget Coach）
 
 **实测结果**（2026-10-04 全部通过）：
@@ -26,14 +26,14 @@
 
 ## 🌐 网页版（规则引擎，同规则）
 
-纯规则计算、无外部 API、中英双语对话：https://2273414587zx-dev.github.io/personal-budget-coach/
+纯规则计算、无外部 API、中英双语对话：https://2273414587zx-dev.github.io/personal-budget-coach/webapp.html
 
 ## 📁 仓库结构
 
 ```
 personal-budget-coach/
-├── index.html                    # 网页版（首页含 Copilot Agent 入口）
-├── copilot-agent/index.html      # Copilot Agent 展示页
+├── index.html                    # ⭐ Copilot Agent 展示页（GitHub Pages 根页面，一打开就是）
+├── webapp.html                   # 网页版（规则引擎，首页含 Copilot 入口）
 ├── docs/
 │   ├── copilot_agent_definition.md    # ⭐ Copilot Agent 完整定义存档
 │   ├── personal_budget_coach_copilot_agent.md  # 创建过程与测试记录
